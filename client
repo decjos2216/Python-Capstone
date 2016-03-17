@@ -1,0 +1,46 @@
+from socket import *
+import functions
+import time
+
+#Prompts for user information
+fileLocation = raw_input("What is the target file for the synchronizer? ") #location of local copy of data
+host = raw_input("What is the IP address of the server? ") 
+
+#Establishing server constants
+PORT = 4003
+BUFSIZE = 1024
+ADDRESS = (host, PORT)
+
+#Creating server connection
+server = socket(AF_INET, SOCK_STREAM)
+server.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
+server.connect(ADDRESS)
+tester = server.recv(BUFSIZE)
+
+#Test for good connectivity to server
+if (functions.testFirstConnection(tester)):
+    print 'Connection successful!'
+else:
+    print 'Connection failure...'
+    server.close()
+
+while True:
+    #Gets data from local copy and sends to server
+    begin = server.recv(BUFSIZE) #Client waits to hear from server to begin preping data for sync
+    if not begin:
+        print 'Client disconnected'
+        server.close()
+    f = open(fileLocation, 'r')
+    string = f.read()
+    f.close()
+    server.send(string)
+
+    #Receive data from server and update local copy
+    string = server.recv(BUFSIZE)
+    if not string:
+        print 'Client disconnected'
+        server.close()
+    f = open(fileLocation, 'w')
+    f.write(string)
+    f.close()
+    print 'Succesful update at', time.ctime() #Dispays time of last update
