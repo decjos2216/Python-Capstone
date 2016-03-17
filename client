@@ -22,6 +22,12 @@ server.connect(ADDRESS)
 tester = server.recv(BUFSIZE)
 
 #Test for good connectivity to server
+def testFirstConnection(test):
+    if (test == '10101'):
+        return True
+    else:
+        return False
+
 if (functions.testFirstConnection(tester)):
     print 'Connection successful!'
 else:
