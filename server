@@ -1,3 +1,7 @@
+"""
+Server program to be run on the computer that all other computers will connect to
+"""
+
 from socket import *
 from threading import Thread
 import time
