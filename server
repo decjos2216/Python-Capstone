@@ -1,0 +1,75 @@
+from socket import *
+from threading import Thread
+import time
+
+class ClientHandler(Thread): #Creates the object that handles client connections
+    def __init__(self, client, fileName, time):
+        Thread.__init__(self)
+        self._client = client
+        self._file = fileName
+        self._time = time * 60 
+
+    def run(self):
+        self._client.send('10101') #Test string to make sure the connection is successful
+        while True: #Loop that keeps the program running
+            time.sleep(self._time)
+            self._client.send('start') #Server sends string to client to prep it for sync
+
+            #Recieve and parse data from client, initialize variables
+            mainString = ''
+            s = set()
+            lyst = []
+            
+            infoRaw = self._client.recv(BUFSIZE)
+            if not infoRaw:
+                print 'Client disconnected'
+                self._client.close()
+                break
+            lyst = infoRaw.split('\n')
+            f = open(self._file, 'r') #Get info from local copy of data on server
+            rawString = f.read()
+            f.close()
+            mainList = rawString.split('\n')
+
+            #Add data from lists to a single set
+            for x in range(len(mainList)):
+                s.add(mainList[x])
+            for x in range(len(lyst)):
+                s.add(lyst[x])
+                
+            #Convert set into a string for transmission
+            for x in range(len(s)):
+                mainString += s.pop() + '\n'
+
+            #Write list to local copy and send string to client
+            f = open(self._file, 'w')
+            f.write(mainString)
+            f.close()
+            self._client.send(mainString)
+            print 'Succesful update at', time.ctime() #Dispays time of last update
+                                    
+#Establishing server constants
+HOST = 'localhost'
+PORT = 4003
+ADDRESS = (HOST, PORT)
+BUFSIZE = 1024
+
+#Creating server
+server = socket(AF_INET, SOCK_STREAM)
+server.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
+server.bind(ADDRESS)
+server.listen(5)
+
+#Prompts for user information
+print "Thank you for using the data synchronizer ver 1.0!"
+fileLocation = raw_input("What is the target file for the synchronizer? ") #location of local copy of data
+timeToWait = float(raw_input("How many minutes do you want to wait between updates? "))
+
+#Establishes connections with clients and creates ClientHandler objects to serve them
+while True:
+    print 'Waiting for connection...'
+    client, address = server.accept()
+    print '...connected from:', address
+    print 'Ready to sync!'
+    handler = ClientHandler(client, fileLocation, timeToWait)
+    handler.start()
