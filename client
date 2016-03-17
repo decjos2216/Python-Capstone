@@ -1,3 +1,7 @@
+"""
+Client program to be run on individual computers
+"""
+
 from socket import *
 import functions
 import time
